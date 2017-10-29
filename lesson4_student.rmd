@@ -446,6 +446,3 @@ Reflection: Explore data with an open mind. Adjust perceptions to glean differen
 
 ***
 
-Click **KnitHTML** to see all of your hard work and to have an html
-page of this lesson, your answers, and your notes!
-
