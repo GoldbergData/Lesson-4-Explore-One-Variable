@@ -1,0 +1,451 @@
+---
+title: "Lesson 8: Explore One Variable"
+author: "Josh Goldberg"
+date: "October 15, 2017"
+output: github_document
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      warning=FALSE, message=FALSE)
+```
+
+### Scatterplots and Perceived Audience Size
+Notes:
+
+***
+
+### Scatterplots
+Notes:
+
+```{r Scatterplots}
+library(rmarkdown)
+library(ggplot2)
+library(readr)
+pf <- read_tsv("pseudo_facebook.tsv")
+
+qplot(x = age, y = friend_count, data = pf)
+
+qplot(age, friend_count, data = pf)
+
+
+```
+
+***
+
+#### What are some things that you notice right away?
+Response: Positively skewed; trimodal?
+
+***
+
+### ggplot Syntax
+Notes:
+
+```{r ggplot Syntax}
+
+ggplot(aes(x = age, y = friend_count), data = pf) +
+  geom_point()+
+  xlim(13, 90)
+
+summary(pf$age)
+
+
+
+```
+
+***
+
+### Overplotting
+Notes:
+
+```{r Overplotting}
+ggplot(aes(x = age, y = friend_count), data = pf) +
+  geom_jitter(alpha = 1/20) +
+  xlim(13, 90)
+
+```
+
+#### What do you notice in the plot?
+Response: Similar properties as before, long tail. So friend count is steady at a certain age, say 30?
+
+***
+
+### Coord_trans()
+Notes:
+
+```{r Coord_trans()}
+
+ggplot(aes(x = age, y = friend_count), data = pf) +
+  geom_point(alpha = 1/20) +
+  xlim(13, 90) +
+  coord_trans(y = 'sqrt')
+
+
+```
+
+#### Look up the documentation for coord_trans() and add a layer to the plot that transforms friend_count using the square root function. Create your plot!
+
+```{r}
+
+ggplot(aes(x = age, y = friend_count), data = pf) +
+  geom_point(alpha = 1/20, position = position_jitter(h = 0)) +
+  xlim(13, 90) +
+  coord_trans(y = 'sqrt')
+
+```
+
+#### What do you notice?
+
+***
+
+### Alpha and Jitter
+Notes:
+
+```{r Alpha and Jitter}
+
+ggplot(aes(x = age, y = friendships_initiated), data = pf) +
+  geom_point(alpha = 1/10, position = position_jitter(h = 0)) +
+  xlim(13, 90) +
+  coord_trans(y = 'sqrt')
+
+```
+
+***
+
+### Overplotting and Domain Knowledge
+Notes:
+
+***
+
+### Conditional Means
+Notes:
+
+```{r Conditional Means}
+library('dplyr')
+
+#age_groups <- group_by(pf, age)
+#pf.fc_by_age <- summarise(age_groups,
+#                          friend_count_mean = mean(friend_count),
+#                          friend_count_median = median(friend_count),
+#                          n = n())
+#pf.fc_by_age <- arrange(pf.fc_by_age, age)
+#head(pf.fc_by_age)
+
+pf.fc_by_age <- pf %>%
+  group_by(age) %>%
+  summarise(friend_count_mean = mean(friend_count),
+            friend_count_median = median(friend_count),
+            n = n()) %>%
+  arrange(age)
+
+head(pf.fc_by_age)
+
+```
+
+Create your plot!
+
+```{r Conditional Means Plot}
+ggplot(aes(x = age, y = friend_count_mean), data = pf.fc_by_age) +
+  geom_line() +
+  xlab("Age of User") +
+  ylab("Average Friend Count") +
+  ggtitle("Facebook Average Friend Count vs. Age")
+
+```
+
+***
+
+### Overlaying Summaries with Raw Data
+Notes: Can't use coord cartesian with coord trans.
+
+```{r Overlaying Summaries with Raw Data}
+
+ggplot(aes(x = age, y = friend_count), data = pf) +
+  coord_cartesian(xlim = c(13, 90), ylim = c(0, 1000)) +
+  xlab("Age of User") +
+  ylab("Friend Count") +
+  ggtitle("Facebook Friend Count vs. Age") +
+  geom_point(alpha = 0.05,
+             position = position_jitter(h = 0),
+             color = 'orange') +
+  #coord_trans(y = 'sqrt') + 
+  geom_line(stat = 'summary', fun.y = mean) +
+  geom_line(stat = 'summary', fun.y = quantile,
+            fun.args = list(probs = .1), linetype = 2, color = 'blue') +
+  geom_line(stat = 'summary', fun.y = quantile,
+            fun.args = list(probs = .9), linetype = 2, color = 'blue') + 
+  geom_line(stat = 'summary', fun.y = quantile,
+            fun.args = list(probs = .5), color = 'blue')
+
+```
+
+#### What are some of your observations of the plot?
+Response: 10th quartile does not have as much jumpiness as the other measurements. Mean is skewed positvely by the peaks in the data. Most users on average are below 1,000 friends.
+
+***
+
+### Moira: Histogram Summary and Scatterplot
+See the Instructor Notes of this video to download Moira's paper on perceived audience size and to see the final plot.
+
+Notes: 
+
+***
+
+### Correlation
+Notes:
+
+```{r Correlation}
+
+cor.test(pf$age, pf$friend_count, method = 'pearson')
+
+```
+
+Look up the documentation for the cor.test function.
+
+What's the correlation between age and friend count? Round to three decimal places.
+Response: -0.027
+
+***
+
+### Correlation on Subsets
+Notes: Different results when you subset the data to excluded certain data.
+
+```{r Correlation on Subsets}
+
+with(subset(pf, age <= 70), cor.test(age, friend_count, method = 'pearson'))
+
+```
+
+***
+
+### Correlation Methods
+Notes:
+
+***
+
+## Create Scatterplots
+Notes:
+
+```{r}
+library(hexbin)
+ggplot(aes(x = www_likes_received, y = likes_received), data = pf) +
+  xlab("Desktop Likes Received") +
+  ylab("Total Likes Received") +
+  ggtitle("Facebook Total Likes vs. Desktop Likes") +
+  geom_point(alpha = .1, color = 'orange') +
+  coord_cartesian(xlim = c(0, quantile(pf$www_likes_received, 0.95)), 
+                  ylim = c(0, quantile(pf$likes_received, 0.95))) +
+  geom_line(stat = 'summary', fun.y = quantile, 
+            fun.args = list(probs = 0.1), linetype = 2, color = 'blue') +
+  geom_line(stat = 'summary', fun.y = quantile,
+            fun.args = list(probs = 0.9), linetype = 2, color = 'blue') +
+  geom_line(stat = 'summary', fun.y = quantile,
+            fun.args = list(probs = 0.5), color = 'green') +
+  geom_line(stat = 'summary', fun.y = mean) +
+  geom_smooth(method = 'lm', color = 'red')
+  
+
+
+summary(pf)
+
+
+```
+
+***
+
+### Strong Correlations
+Notes:
+
+```{r Strong Correlations}
+with(pf, cor.test(likes_received, pf$www_likes_received, method = 'pearson'))
+
+```
+
+What's the correlation betwen the two variables? Include the top 5% of values for the variable in the calculation and round to 3 decimal places.
+
+```{r Correlation Calcuation}
+
+with(pf, cor.test(likes_received, pf$www_likes_received, method = 'pearson'))
+
+
+```
+
+Response:
+
+***
+
+### Moira on Correlation
+Notes:
+
+***
+
+### More Caution with Correlation
+Notes:
+
+```{r More Caution With Correlation}
+library(alr3)
+```
+
+Create your plot!
+
+```{r Temp vs Month}
+data(Mitchell)
+
+ggplot(aes(x = Month, y = Temp), data = Mitchell) +
+  geom_point()
+
+```
+
+***
+
+### Noisy Scatterplots
+a. Take a guess for the correlation coefficient for the scatterplot. Basically zero.
+
+b. What is the actual correlation of the two variables? 0.05747063 
+
+(Round to the thousandths place)
+
+```{r Noisy Scatterplots}
+cor.test(Mitchell$Month, Mitchell$Temp)
+
+```
+
+***
+
+### Making Sense of Data
+Notes:
+
+```{r Making Sense of Data}
+ggplot(aes(x = Month, y = Temp), data = Mitchell) +
+  geom_point() +
+  scale_x_continuous(lim = c(0, 203), breaks = seq(0, 203, 12))
+
+
+```
+
+***
+
+### A New Perspective
+```{r}
+ggplot(aes(x = (Month %% 12), y = Temp), data = Mitchell)+
+  geom_point() +
+  scale_x_continuous(lim = c(0, 12), breaks = seq(0, 12, 1))
+
+```
+What do you notice?
+Response: Cyclical patterns are apparent when the graph is stretched out. 
+
+Watch the solution video and check out the Instructor Notes!
+Notes:
+
+***
+
+### Understanding Noise: Age to Age Months
+Notes:
+
+```{r Understanding Noise: Age to Age Months}
+
+ggplot(aes(x = age, y = friend_count_mean), data = pf.fc_by_age) +
+  geom_line() +
+  xlab("Age of User") +
+  ylab("Average Friend Count") +
+  ggtitle("Facebook Average Friend Count vs. Age")
+
+```
+
+***
+
+### Create an age_with_months variable
+
+```{r}
+pf$age_with_months <- with(pf, age + (1 - dob_month / 12))
+
+```
+
+### Age with Months Means
+
+```{r Age with Months Means}
+
+pf.fc_by_age_months <- pf %>%
+  group_by(age_with_months) %>%
+  summarise(friend_count_mean = mean(friend_count),
+            friend_count_median = median(friend_count),
+            n = n()) %>%
+  arrange(age_with_months)
+head(pf.fc_by_age_months)
+summary(pf.fc_by_age_months)
+  
+
+```
+
+***
+
+### Noise in Conditional Means
+
+```{r Noise in Conditional Means}
+# Create a new line plot showing friend_count_mean versus the new variable,
+# age_with_months. Be sure to use the correct data frame (the one you created
+# in the last exercise) AND subset the data to investigate users with ages less
+# than 71.
+
+ggplot(aes(x = age_with_months, y = friend_count_mean), 
+       data = subset(pf.fc_by_age_months, age_with_months < 71)) +
+  xlab("User Age by Month Fraction") +
+  ylab("Mean Friend Count") +
+  ggtitle("Facebook Average Friend Count vs. Age with Month Fraction") +
+  geom_line(size = .25) +
+  geom_smooth()
+
+```
+
+***
+
+### Smoothing Conditional Means
+Notes:
+
+```{r Smoothing Conditional Means}
+
+p1 <- ggplot(aes(x = age_with_months, y = friend_count_mean), 
+       data = subset(pf.fc_by_age_months, age_with_months < 71)) +
+  xlab("User Age by Month Fraction") +
+  ylab("Mean Friend Count") +
+  ggtitle("Facebook Average Friend Count vs. Age with Month Fraction") +
+  geom_line(size = .25) +
+  geom_smooth()
+
+p2 <- ggplot(aes(x = age, y = friend_count_mean), 
+             data = subset(pf.fc_by_age, age < 71)) +
+  geom_line() +
+  geom_smooth() +
+  xlab("Age of User") +
+  ylab("Average Friend Count") +
+  ggtitle("Facebook Average Friend Count vs. Age")
+
+p3 <- ggplot(aes(x = round(age / 5) * 5, y = friend_count), 
+             data = subset(pf, age < 71)) +
+  geom_line(stat = "summary", fun.y = mean) +
+  xlab("Age of User with 5 Year Bins") +
+  ylab("Average Friend Count") +
+  ggtitle("Facebook Average Friend Count vs. Age")
+
+library(gridExtra)
+
+grid.arrange(p1, p2, p3, ncol = 1)
+
+```
+
+***
+
+### Which Plot to Choose?
+Notes: Probably the middle plot. It seems the middle of tradeoff between flexibility and insights. You don't to pick plots actually. In data analysis, you summarize the same data in different ways to glean numerous insights. Iterative plots may reveal different things about the same data.
+
+***
+
+### Analyzing Two Variables
+Reflection: Explore data with an open mind. Adjust perceptions to glean different insights. Figure out which insights convey the story of purposeful analysis. Specifically to R, ggplot is a useful tool to quickly build these visualizations through coord cartesian zoom adjustments, as well as data and scale transformations (log, sqrt, etc.). Displaying summary values graphic are also handy and easily accessible with ggplot.
+
+***
+
+Click **KnitHTML** to see all of your hard work and to have an html
+page of this lesson, your answers, and your notes!
+
